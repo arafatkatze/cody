@@ -12,7 +12,7 @@ export interface IncrementalTextConsumer {
 }
 
 // Maximum/minimum amount of time to wait between character chunks
-const MAX_DELAY_MS = 200
+const MAX_DELAY_MS = 2000
 const MIN_DELAY_MS = 5
 
 const MIN_CHAR_CHUNK_SIZE = 1

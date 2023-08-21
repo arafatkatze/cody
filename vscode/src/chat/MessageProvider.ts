@@ -395,6 +395,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
         switch (recipeId) {
             case 'context-search':
+                this.sendTypewrite(interaction)
                 this.sendTranscript()
                 await this.onCompletionEnd()
                 break
@@ -417,6 +418,23 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             }
         }
         this.telemetryService.log(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+    }
+
+    private sendTypewrite(interaction: Interaction | null): void {
+        const assistanceString = interaction?.getAssistantMessage()?.displayText
+
+        if (!assistanceString) {
+            return
+        }
+        const typewriter = new Typewriter({
+            update: content => {
+                const displayText = reformatBotMessage(content, '')
+                this.transcript.addAssistantResponse(displayText)
+                this.sendTranscript()
+            },
+            close: () => {},
+        })
+        typewriter.update(assistanceString)
     }
 
     protected async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
