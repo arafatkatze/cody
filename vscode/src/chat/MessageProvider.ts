@@ -9,7 +9,7 @@ import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/reci
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { ChatHistory, ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { Typewriter } from '@sourcegraph/cody-shared/src/chat/typewriter'
+import { TypewriterWithBuffers } from '@sourcegraph/cody-shared/src/chat/typewriter'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { annotateAttribution, Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -180,7 +180,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
 
-        const typewriter = new Typewriter({
+        const typewriter = new TypewriterWithBuffers({
             update: content => {
                 const displayText = reformatBotMessage(content, responsePrefix)
                 this.transcript.addAssistantResponse(displayText)
@@ -198,6 +198,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
+                await typewriter.waitForBufferToEmpty() // Wait for the buffer to be empty
                 typewriter.close()
                 await typewriter.finished
                 const lastInteraction = this.transcript.getLastInteraction()

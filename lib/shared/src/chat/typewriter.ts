@@ -12,7 +12,7 @@ export interface IncrementalTextConsumer {
 }
 
 // Maximum/minimum amount of time to wait between character chunks
-const MAX_DELAY_MS = 200
+const MAX_DELAY_MS = 3000
 const MIN_DELAY_MS = 5
 
 const MIN_CHAR_CHUNK_SIZE = 1
@@ -121,6 +121,130 @@ export class Typewriter implements IncrementalTextConsumer {
             this.consumer.update(this.text)
         }
         // Clean up the consumer, finished promise.
+        if (this.upstreamClosed) {
+            this.consumer.close()
+            this.resolveFinished(this.text)
+        } else {
+            this.rejectFinished(new Error('Typewriter stopped'))
+        }
+    }
+}
+
+export class TypewriterBuffer {
+    private buffer: string[] = []
+
+    enqueue(text: string): void {
+        this.buffer.push(text)
+    }
+
+    dequeue(): string | undefined {
+        return this.buffer.shift()
+    }
+
+    isEmpty(): boolean {
+        return this.buffer.length === 0
+    }
+}
+
+export class TypewriterWithBuffers implements IncrementalTextConsumer {
+    private upstreamClosed = false
+    private resolveFinished: (s: string) => void = () => {}
+    private rejectFinished: (err: any) => void = () => {}
+    public readonly finished: Promise<string>
+    private text = ''
+    private i = 0
+    private interval: ReturnType<typeof setInterval> | undefined
+    private typewriterBuffer: TypewriterBuffer = new TypewriterBuffer()
+
+    constructor(private readonly consumer: IncrementalTextConsumer) {
+        this.finished = new Promise((resolve, reject) => {
+            this.resolveFinished = resolve
+            this.rejectFinished = reject
+        })
+    }
+
+    private processedText = ''
+
+    public update(content: string): void {
+        if (this.upstreamClosed) {
+            throw new Error('Typewriter already closed')
+        }
+
+        // Enqueue the incoming content into the buffer
+        this.typewriterBuffer.enqueue(content)
+
+        // If an interval is already running, don't start a new one
+        if (this.interval) {
+            return
+        }
+
+        this.interval = setInterval(() => {
+            if (this.typewriterBuffer.isEmpty()) {
+                if (this.upstreamClosed) {
+                    clearInterval(this.interval)
+                    this.interval = undefined
+                    this.consumer.close()
+                    this.resolveFinished(this.text)
+                }
+                return
+            }
+
+            // Dequeue the next text chunk from the buffer
+            const updatedText = this.typewriterBuffer.dequeue()
+            if (updatedText) {
+                this.text = updatedText
+            }
+
+            const charChunkSize = MIN_CHAR_CHUNK_SIZE
+            this.processedText += this.text.slice(this.processedText.length, this.processedText.length + charChunkSize)
+            this.consumer.update(this.processedText)
+
+            if (this.processedText.length === this.text.length) {
+                this.processedText = ''
+            }
+        }, MIN_DELAY_MS)
+    }
+
+    public close(): void {
+        this.upstreamClosed = true
+    }
+
+    public async waitForBufferToEmpty(): Promise<void> {
+        return new Promise(resolve => {
+            const checkBufferInterval = setInterval(() => {
+                if (this.typewriterBuffer.isEmpty()) {
+                    clearInterval(checkBufferInterval)
+                    resolve()
+                } else {
+                    // Dequeue the next text chunk from the buffer
+                    const updatedText = this.typewriterBuffer.dequeue()
+                    if (updatedText) {
+                        this.text = updatedText
+                    }
+
+                    const charChunkSize = MIN_CHAR_CHUNK_SIZE
+                    this.processedText += this.text.slice(
+                        this.processedText.length,
+                        this.processedText.length + charChunkSize
+                    )
+                    this.consumer.update(this.processedText)
+
+                    if (this.processedText.length === this.text.length) {
+                        this.processedText = ''
+                    }
+                }
+            }, MIN_DELAY_MS)
+        })
+    }
+
+    public stop(): void {
+        if (this.interval) {
+            clearInterval(this.interval)
+            this.interval = undefined
+        }
+        if (this.i < this.text.length) {
+            this.consumer.update(this.text)
+        }
         if (this.upstreamClosed) {
             this.consumer.close()
             this.resolveFinished(this.text)
