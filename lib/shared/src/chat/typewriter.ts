@@ -11,8 +11,9 @@ export interface IncrementalTextConsumer {
     close: () => void
 }
 
-// This is a ~700 WPM typing speed. Most people read much faster than they type.
-const DELAY_MS = 85
+// This is a ~2900 WPM typing speed. Most people read much faster than they type.
+// In practice it comes out to around 2000-2500 WPM(depending on the machine)
+const DELAY_MS = 20
 
 // Not all languages have spaces, and we don't have a word breaker, so use
 // chunks of characters. This is prime to reduce the likelihood we get an "n
