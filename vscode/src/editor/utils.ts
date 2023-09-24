@@ -1,6 +1,74 @@
 import * as vscode from 'vscode'
 
 /**
+ * Removes folding ranges that correspond to class definitions.
+ *
+ * @param ranges - Array of folding ranges
+ * @param classRanges - Array of class ranges
+ * @returns Array containing folding ranges excluding those that correspond to class definitions
+ */
+export function removeClassRanges(ranges: vscode.FoldingRange[], classRanges: vscode.Range[]): vscode.FoldingRange[] {
+    return ranges.filter(
+        range =>
+            !classRanges.some(
+                cRange => Math.abs(range.start - cRange.start.line) <= 1 && Math.abs(range.end - cRange.end.line) <= 1
+            )
+    )
+}
+
+/**
+ * Finds the largest folding range within given LOC constraints that also contains the active cursor.
+ *
+ * @param ranges - Array of folding ranges
+ * @param classRanges - Array of class ranges
+ * @param targetLOC - The target Line of Code (LOC) count
+ * @param activeCursor - The active cursor position
+ * @returns The largest folding range within the LOC constraints that contains the cursor, or logs an error if none found
+ */
+export function findLargestRangeWithinLOC(
+    ranges: vscode.FoldingRange[],
+    classRanges: vscode.Range[],
+    targetLOC: number,
+    activeCursor: number // New parameter for active cursor
+): vscode.FoldingRange | undefined {
+    // First, remove class-related ranges
+    const filteredRanges = removeClassRanges(ranges, classRanges)
+
+    let largestRange: vscode.FoldingRange | null = null
+    let largestRange2x: vscode.FoldingRange | null = null
+
+    for (const range of filteredRanges) {
+        const rangeLOC = range.end - range.start + 1
+
+        // Ensure active cursor is within the range
+        if (range.start <= activeCursor && range.end >= activeCursor) {
+            // Within target LOC
+            if (rangeLOC <= targetLOC) {
+                if (!largestRange || range.end - range.start > largestRange.end - largestRange.start) {
+                    largestRange = range
+                }
+            }
+
+            // Within 2x target LOC
+            if (rangeLOC <= 2 * targetLOC) {
+                if (!largestRange2x || range.end - range.start > largestRange2x.end - largestRange2x.start) {
+                    largestRange2x = range
+                }
+            }
+        }
+    }
+
+    if (largestRange) {
+        return largestRange
+    }
+    if (largestRange2x) {
+        return largestRange2x
+    }
+    console.error('The active cursor is not contained within any folding ranges or the folding ranges are too large')
+    return undefined
+}
+
+/**
  * Gets the folding ranges for the given document URI.
  *
  * @param uri - The URI of the document to get folding ranges for
@@ -54,13 +122,16 @@ export async function getCursorFoldingRange(
             .then(s => s?.map(symbol => symbol.location.range)),
         getFoldingRange(uri).then(r => r?.filter(r => !r.kind)),
     ])
-    const cursorRange = getOutermostRangesInsideClasses(classes, ranges, activeCursor)
-    if (!cursorRange) {
-        console.error('No folding range found containing cursor')
+    const tragetLOC = 50
+
+    // Apply the new find function here
+    const selectedRange = findLargestRangeWithinLOC(ranges, classes, tragetLOC, activeCursor) // Added activeCursor
+
+    if (!selectedRange) {
         return undefined
     }
 
-    return new vscode.Selection(cursorRange.start, 0, cursorRange.end + 2, 0)
+    return new vscode.Selection(selectedRange.start, 0, selectedRange.end + 2, 0)
 }
 
 /**

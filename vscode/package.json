@@ -522,7 +522,7 @@
         },
         {
           "command": "cody.command.document-code",
-          "when": "false"
+          "when": "cody.activated"
         },
         {
           "command": "cody.focus",
