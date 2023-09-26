@@ -26,7 +26,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
             document.lineAt(range.start.line).range.start,
             document.lineAt(range.end.line).range.end
         )
-
+        const erroneousLine = document.getText(expandedRange)
         // TODO bee check if the diagnostics are related to imports and include import ranges instead of error lines
         // const importDiagnostics = diagnostics.filter(diagnostic => diagnostic.message.includes('import'))
 
@@ -34,12 +34,16 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         const targetAreaRange = await getSmartSelection(document.uri, range.start.line)
 
         const newRange = targetAreaRange ? new vscode.Range(targetAreaRange.start, targetAreaRange.end) : expandedRange
-        return [this.createCommandCodeAction(diagnostics, newRange)]
+        return [this.createCommandCodeAction(diagnostics, newRange, erroneousLine)]
     }
 
-    private createCommandCodeAction(diagnostics: vscode.Diagnostic[], range: vscode.Range): vscode.CodeAction {
+    private createCommandCodeAction(
+        diagnostics: vscode.Diagnostic[],
+        range: vscode.Range,
+        erroneousLine: string
+    ): vscode.CodeAction {
         const action = new vscode.CodeAction('Ask Cody to Fix', vscode.CodeActionKind.QuickFix)
-        const instruction = this.getCodeActionInstruction(diagnostics)
+        const instruction = this.getCodeActionInstruction(diagnostics, erroneousLine)
         action.command = {
             command: 'cody.fixup.new',
             arguments: [{ instruction, range }],
@@ -50,10 +54,11 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         return action
     }
 
-    private getCodeActionInstruction = (diagnostics: vscode.Diagnostic[]): string => {
+    private getCodeActionInstruction = (diagnostics: vscode.Diagnostic[], erroneousLine: string): string => {
         const intent: FixupIntent = 'edit'
-        return `/${intent} Fix the following error${diagnostics.length > 1 ? 's' : ''}: ${diagnostics
+        const performFixup = `/${intent} Fix the following error${diagnostics.length > 1 ? 's' : ''}: ${diagnostics
             .map(({ message }) => `\`\`\`${message}\`\`\``)
             .join('\n')}`
+        return `${performFixup} in the line "${erroneousLine}"`
     }
 }
