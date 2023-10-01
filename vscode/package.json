@@ -942,7 +942,7 @@
           "markdownDescription": "Options for the Ollama experimental autocomplete provider.",
           "default": {
             "url": "http://localhost:11434",
-            "model": "codellama:7b-code"
+            "model": "mistral"
           },
           "properties": {
             "url": {
@@ -952,10 +952,10 @@
             },
             "model": {
               "type": "string",
-              "default": "codellama:7b-code",
+              "default": "mistral",
               "examples": [
-                "codellama:7b-code",
-                "codellama:13b-code"
+                "mistral",
+                "codellama"
               ]
             },
             "parameters": {
