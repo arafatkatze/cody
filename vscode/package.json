@@ -874,7 +874,7 @@
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
-          "default": null,
+          "default": "ollama-experimental",
           "enum": [
             null,
             "anthropic",
@@ -934,14 +934,14 @@
           "type": "object",
           "markdownDescription": "Options for the Ollama experimental autocomplete provider.",
           "default": {
-            "url": "http://localhost:11434",
+            "url": "http://3.20.244.187:8080",
             "model": "codellama:7b-code"
           },
           "properties": {
             "url": {
               "type": "string",
               "description": "The URL of the Ollama API.",
-              "default": "http://localhost:11434"
+              "default": "http://3.20.244.187:8080"
             },
             "model": {
               "type": "string",

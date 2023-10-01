@@ -146,19 +146,19 @@ class OllamaProvider extends Provider {
             suffix: this.options.docContext.suffix,
         }
         if (process.env.OTHER_FILES) {
-            // TODO(sqs)
-            const maxPromptChars = 1234 /* tokensToChars(
-                this.ollamaOptions.parameters.num_ctx * (1 - this.options.responsePercentage)
-            )    */
+            const maxPromptChars = 1234 // Use the hard-coded value for simplicity.
             for (const snippet of snippets) {
+                // Check the length of the prompt if the snippet were added.
                 const extendedSnippets = [...prompt.snippets, snippet]
                 const promptLengthWithSnippet = llamaCodePromptString(
                     { ...prompt, snippets: extendedSnippets },
                     infill
                 ).length
+                // If the length would exceed maxPromptChars, break out of the loop.
                 if (promptLengthWithSnippet > maxPromptChars) {
                     break
                 }
+                // If the length is within the limit, update the prompt's snippets.
                 prompt.snippets = extendedSnippets
             }
         }
@@ -168,10 +168,11 @@ class OllamaProvider extends Provider {
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
         // Only use infill if the suffix has alphanumerics, where it might give us a var name we should refer to. TODO(sqs): playing around with this...
         const useInfill = /\s*\w/.test(this.options.docContext.suffix)
+        const promptString = llamaCodePromptString(this.createPrompt(snippets, useInfill), useInfill)
         const request: OllamaGenerateRequest = {
-            prompt: llamaCodePromptString(this.createPrompt(snippets, useInfill), useInfill),
+            prompt: promptString,
             template: '{{ .Prompt }}',
-            model: this.ollamaOptions.model,
+            model: 'mistral',
             options: {
                 num_predict: this.options.multiline ? 100 : 15,
                 ...this.ollamaOptions.parameters,
@@ -180,7 +181,7 @@ class OllamaProvider extends Provider {
                     : [...(this.ollamaOptions.parameters?.stop ?? []), '\n'],
             },
         }
-
+        //
         const log = logger.startCompletion({
             request,
             provider: PROVIDER_IDENTIFIER,
@@ -190,6 +191,9 @@ class OllamaProvider extends Provider {
         let responseText = ''
 
         try {
+            console.log('start')
+            const uniqueLabel = `profileFetch-${Date.now()}` // Create a unique label for each invocation
+            console.time(uniqueLabel) // Start timer with unique label
             const response: BrowserOrNodeResponse = await fetch(new URL('/api/generate', this.ollamaOptions.url), {
                 method: 'POST',
                 body: JSON.stringify(request),
@@ -202,6 +206,8 @@ class OllamaProvider extends Provider {
                 const errorResponse = (await response.json()) as OllamaGenerateErrorResponse
                 throw new Error(`ollama generation error: ${errorResponse?.error || 'unknown error'}`)
             }
+            console.log('last line', promptString.split('\n').pop())
+            console.timeEnd(uniqueLabel) // End timer with the same unique label
 
             const processLine = (line: OllamaGenerateResponse): void => {
                 if (line.response) {
@@ -254,6 +260,12 @@ class OllamaProvider extends Provider {
 
             const completions: Completion[] = responseText ? [{ content: postProcess(responseText) }] : []
             log?.onComplete(completions.map(c => c.content))
+            let index = 1
+            for (const completion of completions) {
+                console.log(`Index ${index}:`, completion.content)
+                index++
+            }
+            console.log('End')
             return completions
         } catch (error: any) {
             if (!isAbortError(error)) {
