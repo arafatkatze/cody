@@ -46,7 +46,7 @@ export function createOllamaProviderConfig(ollamaOptions: OllamaOptions): Provid
             // reevaluate more tokens in the prompt. This is because the prompt is (roughly) `prefix
             // (cursor position) suffix`, so even typing a single character at the cursor position
             // invalidates the LLM's cache of the suffix.
-            suffixChars: 5,
+            suffixChars: 100,
         },
         enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
@@ -105,22 +105,24 @@ interface LlamaCodePrompt {
     suffix: string
 }
 
-function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean): string {
+function llamaCodePromptString(prompt: LlamaCodePrompt, infill: boolean, model: string): string {
     // TODO(sqs): use the correct comment syntax for the language (eg '#' for Python, not '//').
-    return (
-        prompt.snippets
-            .map(
-                ({ fileName, content }) =>
-                    `// Path: ${fileName}\n${content
-                        .split('\n')
-                        .map(line => `// ${line}`)
-                        .join('\n')}`
-            )
-            .join('\n\n') +
-        (infill
-            ? `${INFILL_TOKENS.PRE}// Path: ${prompt.fileName}\n${prompt.prefix}${INFILL_TOKENS.SUF}${prompt.suffix}${INFILL_TOKENS.MID}`
-            : `// Path: ${prompt.fileName}\n${prompt.prefix}`)
-    )
+    let output = prompt.snippets
+        .map(
+            ({ fileName, content }) =>
+                `// Path: ${fileName}\n${content
+                    .split('\n')
+                    .map(line => `// ${line}`)
+                    .join('\n')}`
+        )
+        .join('\n\n')
+
+    if (model === 'codellama' && infill) {
+        output += `${INFILL_TOKENS.PRE}// Path: ${prompt.fileName}\n${prompt.prefix}${INFILL_TOKENS.SUF}${prompt.suffix}${INFILL_TOKENS.MID}`
+    } else {
+        output += `// Path: ${prompt.fileName}\n${prompt.prefix}`
+    }
+    return output
 }
 
 /**
@@ -138,7 +140,7 @@ class OllamaProvider extends Provider {
         super(options)
     }
 
-    protected createPrompt(snippets: ContextSnippet[], infill: boolean): LlamaCodePrompt {
+    protected createPrompt(snippets: ContextSnippet[], infill: boolean, model: string): LlamaCodePrompt {
         const prompt: LlamaCodePrompt = {
             snippets: [],
             fileName: this.options.fileName,
@@ -154,7 +156,8 @@ class OllamaProvider extends Provider {
                 const extendedSnippets = [...prompt.snippets, snippet]
                 const promptLengthWithSnippet = llamaCodePromptString(
                     { ...prompt, snippets: extendedSnippets },
-                    infill
+                    infill,
+                    model
                 ).length
                 if (promptLengthWithSnippet > maxPromptChars) {
                     break
@@ -166,14 +169,19 @@ class OllamaProvider extends Provider {
     }
 
     public async generateCompletions(abortSignal: AbortSignal, snippets: ContextSnippet[]): Promise<Completion[]> {
-        // Only use infill if the suffix has alphanumerics, where it might give us a var name we should refer to. TODO(sqs): playing around with this...
-        const useInfill = /\s*\w/.test(this.options.docContext.suffix)
+        // Only use infill if the suffix has alphanumerics, brackets, braces, or parentheses
+        const hasAlphaNumberBraces = (str: string): boolean => /[\w()[\]{}]/.test(str)
+        const useInfill = hasAlphaNumberBraces(this.options.docContext.suffix)
         const request: OllamaGenerateRequest = {
-            prompt: llamaCodePromptString(this.createPrompt(snippets, useInfill), useInfill),
+            prompt: llamaCodePromptString(
+                this.createPrompt(snippets, useInfill, this.ollamaOptions.model),
+                useInfill,
+                this.ollamaOptions.model
+            ),
             template: '{{ .Prompt }}',
             model: this.ollamaOptions.model,
             options: {
-                num_predict: this.options.multiline ? 100 : 15,
+                num_predict: this.options.multiline ? 100 : 20,
                 ...this.ollamaOptions.parameters,
                 stop: this.options.multiline
                     ? this.ollamaOptions.parameters?.stop
