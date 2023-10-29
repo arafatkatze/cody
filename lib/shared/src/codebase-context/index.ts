@@ -23,6 +23,7 @@ import { ContextFile, ContextFileSource, ContextMessage, getContextMessageWithRe
 export interface ContextSearchOptions {
     numCodeResults: number
     numTextResults: number
+    reranking: boolean
 }
 
 export class CodebaseContext {

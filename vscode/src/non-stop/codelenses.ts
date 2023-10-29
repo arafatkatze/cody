@@ -7,22 +7,56 @@ import { CodyTaskState } from './utils'
 
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
+    const msToTime = (duration: number) =>
+        `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
+            (duration / (1000 * 60)) % 60
+        )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(((duration % 1000) / 100).toString())} seconds.`
     const codeLensRange = getSingleLineRange(task.selectionRange.start.line)
     switch (task.state) {
         case CodyTaskState.working: {
+            console.log(
+                'Time:',
+                msToTime(Date.now()),
+                'Function: getLensesForTask File: vscode/src/non-stop/codelenses.ts Status: CodyTaskState.working start'
+            )
             const title = getWorkingLens(codeLensRange)
             const cancel = getCancelLens(codeLensRange, task.id)
+            console.log(
+                'Time:',
+                msToTime(Date.now()),
+                'Function: getLensesForTask File: vscode/src/non-stop/codelenses.ts Status: CodyTaskState.working End'
+            )
             return [title, cancel]
         }
         case CodyTaskState.ready: {
+            console.log(
+                'Time:',
+                msToTime(Date.now()),
+                'Function: getLensesForTask File: vscode/src/non-stop/codelenses.ts Status: CodyTaskState.ready start'
+            )
             const apply = getApplyLens(codeLensRange, task.id)
             const diff = getDiffLens(codeLensRange, task.id)
             const discard = getDiscardLens(codeLensRange, task.id)
             const regenerate = getRegenerateLens(codeLensRange, task.id)
+            console.log(
+                'Time:',
+                msToTime(Date.now()),
+                'Function: getLensesForTask File: vscode/src/non-stop/codelenses.ts Status: CodyTaskState.ready end'
+            )
             return [apply, diff, regenerate, discard]
         }
         case CodyTaskState.applying: {
+            console.log(
+                'Time:',
+                msToTime(Date.now()),
+                'Function: getLensesForTask File: vscode/src/non-stop/codelenses.ts Status: CodyTaskState.applying start'
+            )
             const title = getApplyingLens(codeLensRange)
+            console.log(
+                'Time:',
+                msToTime(Date.now()),
+                'Function: getLensesForTask File: vscode/src/non-stop/codelenses.ts Status: CodyTaskState.applying end'
+            )
             return [title]
         }
         case CodyTaskState.error: {

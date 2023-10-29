@@ -78,16 +78,19 @@ async function restoreTranscriptFromSlackThread(
             newHumanSlackInteraction.updateContextMessages(codebaseContexts, 'github.com/sourcegraph/sourcegraph', {
                 numCodeResults: 3,
                 numTextResults: 5,
+                reranking: true,
             }),
             newHumanSlackInteraction.updateContextMessages(codebaseContexts, 'github.com/sourcegraph/handbook', {
                 numCodeResults: 0,
                 numTextResults: 4,
+                reranking: true,
             }),
         ])
     } else {
         await newHumanSlackInteraction.updateContextMessages(codebaseContexts, 'github.com/sourcegraph/sourcegraph', {
             numCodeResults: 12,
             numTextResults: 3,
+            reranking: true,
         })
     }
 

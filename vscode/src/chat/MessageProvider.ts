@@ -195,6 +195,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         let text = ''
 
+        const msToTime = (duration: number) =>
+            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
+                (duration / (1000 * 60)) % 60
+            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+                ((duration % 1000) / 100).toString()
+            )} seconds.`
         this.multiplexer.sub(multiplexerTopic, {
             onResponse: (content: string) => {
                 text += content
@@ -202,6 +208,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
+                console.log(
+                    'Time:',
+                    msToTime(Date.now()),
+                    'Function: sendPrompt File: vscode/src/chat/MessageProvider.ts Status: Streaming Response finally received back from LLM'
+                )
                 typewriter.close()
                 await typewriter.finished
                 const lastInteraction = this.transcript.getLastInteraction()
@@ -311,7 +322,12 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             this.handleError('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
         }
-
+        const msToTime = (duration: number) =>
+            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
+                (duration / (1000 * 60)) % 60
+            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+                ((duration % 1000) / 100).toString()
+            )} seconds.`
         // Filter the human input to check for chat commands and retrieve the correct recipe id
         // e.g. /edit from 'chat-question' should be redirected to use the 'fixup' recipe
         const command = await this.chatCommandsFilter(humanChatInput, recipeId, source)
@@ -331,7 +347,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
         // Create a new multiplexer to drop any old subscribers
         this.multiplexer = new BotResponseMultiplexer()
-
+        console.log(
+            'Time:',
+            msToTime(Date.now()),
+            'Function: executeRecipe File: vscode/src/chat/MessageProvider.ts Status: get interaction Started'
+        )
         const interaction = await recipe.getInteraction(humanChatInput, {
             editor: this.editor,
             intentDetector: this.intentDetector,
@@ -342,6 +362,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         if (!interaction) {
             return
         }
+        console.log(
+            'Time:',
+            msToTime(Date.now()),
+            'Function: executeRecipe File: vscode/src/chat/MessageProvider.ts Status: get interaction Finished'
+        )
         const errorMsg = interaction?.getAssistantMessage()?.error
         if (errorMsg !== undefined) {
             await this.addCustomInteraction(errorMsg, '', interaction)
@@ -364,11 +389,21 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
                 await this.onCompletionEnd()
                 break
             default: {
+                console.log(
+                    'Time:',
+                    msToTime(Date.now()),
+                    'Function: executeRecipe File: vscode/src/chat/MessageProvider.ts Status: send Transcript'
+                )
                 this.sendTranscript()
 
                 const { prompt, contextFiles, preciseContexts } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.contextProvider.context.getCodebase()),
                     this.maxPromptTokens
+                )
+                console.log(
+                    'Time:',
+                    msToTime(Date.now()),
+                    'Function: executeRecipe File: vscode/src/chat/MessageProvider.ts Status: Received Prompts before sending to LLM'
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles, preciseContexts)
                 this.sendPrompt(
@@ -392,6 +427,11 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             `CodyVSCodeExtension:recipe:${recipe.id}:executed`,
             { contextSummary },
             { hasV2Event: true }
+        )
+        console.log(
+            'Time:',
+            msToTime(Date.now()),
+            'Function: executeRecipe File: vscode/src/chat/MessageProvider.ts Status: Function Completed'
         )
         telemetryRecorder.recordEvent(`cody.recipe.${recipe.id}`, 'executed', { metadata: { ...contextSummary } })
     }
@@ -489,6 +529,19 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
      */
     private sendTranscript(): void {
         const chatTranscript = this.transcript.toChat()
+        const msToTime = (duration: number) =>
+            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
+                (duration / (1000 * 60)) % 60
+            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+                ((duration % 1000) / 100).toString()
+            )} seconds.`
+        if (this.isMessageInProgress == false) {
+            console.log(
+                'Time:',
+                msToTime(Date.now()),
+                'Function: sendTranscript File: vscode/src/chat/MessageProvider.ts Status: Message processing finished'
+            )
+        }
         this.handleTranscript(chatTranscript, this.isMessageInProgress)
     }
 
@@ -627,12 +680,28 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     }
 
     private async saveTranscriptToChatHistory(): Promise<void> {
+        const msToTime = (duration: number) =>
+            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
+                (duration / (1000 * 60)) % 60
+            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+                ((duration % 1000) / 100).toString()
+            )} seconds.`
         if (this.transcript.isEmpty) {
             return
         }
+        console.log(
+            'Time:',
+            msToTime(Date.now()),
+            'Function: saveTranscriptToChatHistory File: vscode/src/chat/MessageProvider.ts Status: saveTranscriptToChatHistory Start'
+        )
         MessageProvider.chatHistory[this.currentChatID] = await this.transcript.toJSON()
         await this.saveChatHistory()
         this.sendHistory()
+        console.log(
+            'Time:',
+            msToTime(Date.now()),
+            'Function: saveTranscriptToChatHistory File: vscode/src/chat/MessageProvider.ts Status: saveTranscriptToChatHistory finished'
+        )
     }
 
     /**

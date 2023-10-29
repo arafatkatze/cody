@@ -80,7 +80,23 @@ export class FixupProvider extends MessageProvider {
     }
 
     public async startFix(): Promise<void> {
+        const msToTime = (duration: number) =>
+            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
+                (duration / (1000 * 60)) % 60
+            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+                ((duration % 1000) / 100).toString()
+            )} seconds.`
+        console.log(
+            'Time:',
+            msToTime(Date.now()),
+            'Function: startFix File: vscode/src/chat/FixupViewProvider.ts Status: Function Started'
+        )
         await this.executeRecipe('fixup', this.task.id, this.task.source)
+        console.log(
+            'Time:',
+            msToTime(Date.now()),
+            'Function: startFix File: vscode/src/chat/FixupViewProvider.ts Status: Function Finished'
+        )
     }
 
     public async abortFix(): Promise<void> {

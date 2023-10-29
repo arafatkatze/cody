@@ -52,7 +52,11 @@ export class Fixup implements Recipe {
             return null
         }
 
+        const startTime = new Date().getTime()
         const intent = await this.fetchRecipeIntent(fixupController, taskId, context)
+        const endTime = new Date().getTime()
+        const elapsedTime = (endTime - startTime) / 1000 // time in seconds
+        console.log('Time elapsed for intent calculation:', elapsedTime)
         const enableSmartSelection = intent === 'edit'
         const fixupTask = await fixupController.getTaskRecipeData(taskId, { enableSmartSelection })
 
@@ -133,6 +137,7 @@ export class Fixup implements Recipe {
                     .getContextMessages(task.instruction, {
                         numCodeResults: 4,
                         numTextResults: 0,
+                        reranking: true,
                     })
                     .then(messages =>
                         messages.concat(
@@ -157,7 +162,8 @@ export class Fixup implements Recipe {
                     truncatedPrecedingText,
                     truncatedFollowingText,
                     task,
-                    context.codebaseContext
+                    context.codebaseContext,
+                    true
                 ).then(messages =>
                     messages.concat(
                         errorsAndWarnings.flatMap(diagnostic =>

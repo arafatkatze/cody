@@ -102,6 +102,7 @@ export class InlineChat implements Recipe {
         const extraContext = await codebaseContext.getContextMessages(text, {
             numCodeResults: 5,
             numTextResults: 3,
+            reranking: true,
         })
         contextMessages.push(...extraContext)
 

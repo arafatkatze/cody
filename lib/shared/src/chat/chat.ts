@@ -18,7 +18,20 @@ export class ChatClient {
     public chat(messages: Message[], cb: CompletionCallbacks, params?: Partial<ChatParameters>): () => void {
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
         const augmentedMessages = isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
+        if (augmentedMessages.length > 10) {
+            const msToTime = (duration: number) =>
+                `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
+                    (duration / (1000 * 60)) % 60
+                )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+                    ((duration % 1000) / 100).toString()
+                )} seconds `
 
+            console.log(
+                'Time:',
+                msToTime(Date.now()),
+                'Function: ChatClient:chat File: lib/shared/src/chat/chat.ts Status: Sending the Main Prompt request to LLM'
+            )
+        }
         return this.completions.stream(
             {
                 ...DEFAULT_CHAT_COMPLETION_PARAMETERS,

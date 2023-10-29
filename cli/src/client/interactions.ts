@@ -19,6 +19,7 @@ async function getContextMessages(
         const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
             numCodeResults: 8,
             numTextResults: 2,
+            reranking: true,
         })
 
         contextMessages.push(...codebaseContextMessages)

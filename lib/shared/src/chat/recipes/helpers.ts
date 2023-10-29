@@ -46,11 +46,13 @@ export async function getContextMessagesFromSelection(
     precedingText: string,
     followingText: string,
     { fileName, repoName, revision }: { fileName: string; repoName?: string; revision?: string },
-    codebaseContext: CodebaseContext
+    codebaseContext: CodebaseContext,
+    reranking: boolean = true
 ): Promise<ContextMessage[]> {
     const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
         numCodeResults: 4,
         numTextResults: 0,
+        reranking,
     })
 
     return selectedTextContext.concat(
@@ -75,7 +77,7 @@ export function contentSanitizer(text: string): string {
     let output = text.replace(/<\/fixup>\s$/, '')
     const tagsIndex = text.indexOf('tags:')
     if (tagsIndex !== -1) {
-        // NOTE: 6 is the length of `tags:` + 1 space
+        // NOT E: 6 is the length of `tags:` + 1 space
         output = output.slice(tagsIndex + 6)
     }
     return output.replace(/^\s*\n/, '')
@@ -84,6 +86,7 @@ export function contentSanitizer(text: string): string {
 export const numResults = {
     numCodeResults: NUM_CODE_RESULTS,
     numTextResults: NUM_TEXT_RESULTS,
+    reranking: true,
 }
 
 export function isSingleWord(str: string): boolean {

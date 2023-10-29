@@ -167,7 +167,18 @@ export class Transcript {
         if (this.interactions.length === 0) {
             return { prompt: [], contextFiles: [], preciseContexts: [] }
         }
+        const msToTime = (duration: number) =>
+            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
+                (duration / (1000 * 60)) % 60
+            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+                ((duration % 1000) / 100).toString()
+            )} seconds.`
 
+        console.log(
+            'Time:',
+            msToTime(Date.now()),
+            'Function: getPromptForLastInteraction File: lib/shared/src/chat/transcript/index.ts\n Status: Start of the function'
+        )
         const lastInteractionWithContextIndex = await this.getLastInteractionWithContextIndex()
         const messages: Message[] = []
         for (let index = 0; index < this.interactions.length; index++) {
@@ -182,6 +193,11 @@ export class Transcript {
             }
         }
 
+        console.log(
+            'Time:',
+            msToTime(Date.now()),
+            'Function: getPromptForLastInteraction File: lib/shared/src/chat/transcript/index.ts\n Status: First for loop finished'
+        )
         const preambleTokensUsage = preamble.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
         let truncatedMessages = truncatePrompt(messages, maxPromptLength - preambleTokensUsage)
         // Return what context fits in the window
@@ -201,7 +217,11 @@ export class Transcript {
 
         // Filter out extraneous fields from ContextMessage instances
         truncatedMessages = truncatedMessages.map(({ speaker, text }) => ({ speaker, text }))
-
+        console.log(
+            'Time:',
+            msToTime(Date.now()),
+            'Function: getPromptForLastInteraction File: lib/shared/src/chat/transcript/index.ts\n Status: Function finished'
+        )
         return {
             prompt: [...preamble, ...truncatedMessages],
             contextFiles,
