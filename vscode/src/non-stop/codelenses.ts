@@ -8,9 +8,9 @@ import { CodyTaskState } from './utils'
 // Create Lenses based on state
 export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
     const msToTime = (duration: number) =>
-        `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
-            (duration / (1000 * 60)) % 60
-        )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(((duration % 1000) / 100).toString())} seconds.`
+        `${Math.floor((duration / (1000 * 60)) % 60)} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+            ((duration % 1000) / 100).toString()
+        )} seconds.`
     const codeLensRange = getSingleLineRange(task.selectionRange.start.line)
     switch (task.state) {
         case CodyTaskState.working: {

@@ -196,23 +196,23 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
         let text = ''
 
         const msToTime = (duration: number) =>
-            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
-                (duration / (1000 * 60)) % 60
-            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+            `${Math.floor((duration / (1000 * 60)) % 60)} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
                 ((duration % 1000) / 100).toString()
             )} seconds.`
         this.multiplexer.sub(multiplexerTopic, {
             onResponse: (content: string) => {
+                if (text === '') {
+                    console.log(
+                        'Time:',
+                        msToTime(Date.now()),
+                        'Function: sendPrompt File: vscode/src/chat/MessageProvider.ts Status: Streaming Response finally received back from LLM'
+                    )
+                }
                 text += content
                 typewriter.update(text)
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
-                console.log(
-                    'Time:',
-                    msToTime(Date.now()),
-                    'Function: sendPrompt File: vscode/src/chat/MessageProvider.ts Status: Streaming Response finally received back from LLM'
-                )
                 typewriter.close()
                 await typewriter.finished
                 const lastInteraction = this.transcript.getLastInteraction()
@@ -323,9 +323,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
             return
         }
         const msToTime = (duration: number) =>
-            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
-                (duration / (1000 * 60)) % 60
-            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+            `${Math.floor((duration / (1000 * 60)) % 60)} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
                 ((duration % 1000) / 100).toString()
             )} seconds.`
         // Filter the human input to check for chat commands and retrieve the correct recipe id
@@ -530,9 +528,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
     private sendTranscript(): void {
         const chatTranscript = this.transcript.toChat()
         const msToTime = (duration: number) =>
-            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
-                (duration / (1000 * 60)) % 60
-            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+            `${Math.floor((duration / (1000 * 60)) % 60)} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
                 ((duration % 1000) / 100).toString()
             )} seconds.`
         if (this.isMessageInProgress == false) {
@@ -681,9 +677,7 @@ export abstract class MessageProvider extends MessageHandler implements vscode.D
 
     private async saveTranscriptToChatHistory(): Promise<void> {
         const msToTime = (duration: number) =>
-            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
-                (duration / (1000 * 60)) % 60
-            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+            `${Math.floor((duration / (1000 * 60)) % 60)} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
                 ((duration % 1000) / 100).toString()
             )} seconds.`
         if (this.transcript.isEmpty) {

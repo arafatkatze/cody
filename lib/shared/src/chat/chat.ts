@@ -20,11 +20,9 @@ export class ChatClient {
         const augmentedMessages = isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
         if (augmentedMessages.length > 10) {
             const msToTime = (duration: number) =>
-                `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
-                    (duration / (1000 * 60)) % 60
-                )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
-                    ((duration % 1000) / 100).toString()
-                )} seconds `
+                `${Math.floor((duration / (1000 * 60)) % 60)} minutes and ${Math.floor(
+                    (duration / 1000) % 60
+                )}.${parseInt(((duration % 1000) / 100).toString())} seconds `
 
             console.log(
                 'Time:',

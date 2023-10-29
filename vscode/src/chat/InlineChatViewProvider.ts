@@ -33,7 +33,6 @@ export class InlineChatViewManager implements vscode.Disposable {
         if (this.codeActionProvider) {
             return
         }
-
         this.codeActionProvider = vscode.languages.registerCodeActionsProvider('*', new ExplainCodeAction(), {
             providedCodeActionKinds: ExplainCodeAction.providedCodeActionKinds,
         })

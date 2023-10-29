@@ -168,9 +168,7 @@ export class Transcript {
             return { prompt: [], contextFiles: [], preciseContexts: [] }
         }
         const msToTime = (duration: number) =>
-            `${Math.floor((duration / (1000 * 60 * 60)) % 24)} hours ${Math.floor(
-                (duration / (1000 * 60)) % 60
-            )} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
+            `${Math.floor((duration / (1000 * 60)) % 60)} minutes and ${Math.floor((duration / 1000) % 60)}.${parseInt(
                 ((duration % 1000) / 100).toString()
             )} seconds.`
 
