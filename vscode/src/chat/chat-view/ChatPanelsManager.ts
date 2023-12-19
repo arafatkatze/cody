@@ -12,6 +12,7 @@ import { View } from '../../../webviews/NavBar'
 import { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
+import { localStorage } from '../../services/LocalStorageProvider'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
 import { TreeViewProvider } from '../../services/TreeViewProvider'
 import { CachedRemoteEmbeddingsClient } from '../CachedRemoteEmbeddingsClient'
@@ -139,7 +140,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Get the view column of the current active chat panel so that we can open a new one on top of it
         const activePanelViewColumn = this.activePanelProvider?.webviewPanel?.viewColumn
 
-        const provider = this.createProvider()
+        const savedModel = localStorage.get('model')
+        const provider = this.createProvider(savedModel)
         if (chatID && this.options.contextProvider.config.experimentalSimpleChatContext) {
             await provider.restoreSession(chatID)
         }
@@ -179,7 +181,7 @@ export class ChatPanelsManager implements vscode.Disposable {
      * Returns either SimpleChatPanelProvider or ChatPanelProvider based on config.
      * NOTE: This can be removed once we have migrated ChatPanelProvider to SimpleChatPanelProvider
      */
-    private createProvider(): SimpleChatPanelProvider | ChatPanelProvider {
+    private createProvider(savedModel: string | null): SimpleChatPanelProvider | ChatPanelProvider {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
         if (authStatus?.configOverwrites?.chatModel) {
@@ -205,7 +207,7 @@ export class ChatPanelsManager implements vscode.Disposable {
                       this.options.contextProvider,
                       this.options.platform
                   ),
-                  defaultModelID: defaultModel.model,
+                  defaultModelID: savedModel || defaultModel.model,
               })
             : new ChatPanelProvider(this.options)
     }

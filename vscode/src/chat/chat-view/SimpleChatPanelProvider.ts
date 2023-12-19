@@ -39,6 +39,7 @@ import { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { AuthProvider } from '../../services/AuthProvider'
 import { getProcessInfo } from '../../services/LocalAppDetector'
+import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 import { telemetryRecorder } from '../../services/telemetry-v2'
 import { createCodyChatTreeItems } from '../../services/treeViewItems'
@@ -364,6 +365,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, IChatPanelPro
                 break
             case 'links':
                 void openExternalLinks(message.value)
+                break
+
+            case 'saveModel':
+                await localStorage.set('model', message.model)
                 break
             case 'openFile':
                 await openFilePath(message.filePath, this.webviewPanel?.viewColumn, message.range)
