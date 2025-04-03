@@ -22,7 +22,7 @@ import { StateDebugOverlay } from './components/StateDebugOverlay'
 import type { ServerType } from './components/mcp'
 import { ServerHome } from './components/mcp/ServerHome'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
-import { HistoryTab, PromptsTab, TabsBar, View } from './tabs'
+import { HistoryTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { useUserAccountInfo } from './utils/useConfig'
 import { useFeatureFlag } from './utils/useFeatureFlags'
@@ -168,9 +168,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             multipleWebviewsEnabled={config.multipleWebviewsEnabled}
                         />
                     )}
-                    {view === View.Prompts && (
-                        <PromptsTab IDE={clientCapabilities.agentIDE} setView={setView} />
-                    )}
+                    {/* Prompts tab has been removed */}
                     {view === View.Settings &&
                         // NOTE: This is temporary to hide the MCP UI until it is implemented.
                         // During internal dogfooding, users will be using the vscode config to set up
